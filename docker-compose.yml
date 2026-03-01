@@ -1,0 +1,10 @@
+services:
+  backend-agent:
+    build: .                 # 현재 폴더에 있는 Dockerfile을 보고 펌웨어를 구워라
+    container_name: agent_api # 작동할 컨테이너의 이름
+    ports:
+      - "8000:8000"          # 외부에서 8000번으로 접속하면 컨테이너의 8000번으로 뚫어주겠다 (포트 포워딩)
+    volumes:
+      - .:/app               # 코드를 수정하면 도커를 껐다 켜지 않아도 즉시 반영되게 연결 (마운트)
+    environment:
+      - OLLAMA_HOST=172.30.1.44 # 환경 변수 주입
