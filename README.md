@@ -34,4 +34,5 @@ AIagent/
 3. **CSV Upload**: 사용자 화면에서 CSV 파일을 백엔드 서버로 직접 업로드하는 기능
 
 ## 🚀 실행 방법
-(아래 가이드를 참고하여 백엔드를 먼저 실행한 후 프론트엔드를 실행합니다.)
+uvicorn backend.main:app --reload
+streamlit run frontend/app.py
