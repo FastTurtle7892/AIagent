@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 from fastmcp import FastMCP
+from typing import Optional
 
 # ✨ 모듈화된 에이전트 가져오기
 from backend.agents.sqlagent import get_sql_agent
@@ -23,6 +24,7 @@ mcp = FastMCP("DataAgentTools")
 # ---------------------------------------------------------
 class ChatRequest(BaseModel):
     query: str
+    file_path: Optional[str] = None  # 프론트엔드에서 넘겨줄 파일 경로
 
 @app.post("/chat/sql")
 async def chat_sql(request: ChatRequest):
@@ -35,7 +37,12 @@ async def chat_sql(request: ChatRequest):
 async def chat_load(request: ChatRequest):
     # Load 에이전트 생성 및 실행
     agent = get_load_agent()
-    response = agent.invoke({"messages": [{"role": "user", "content": request.query}]})
+    # 에이전트가 "방금 업로드한 파일"을 이해할 수 있도록 문맥(Context) 주입
+    query_with_context = request.query
+    if request.file_path:
+        query_with_context += f"\n\n[System Note: 사용자가 최근 업로드한 CSV 파일의 경로는 '{request.file_path}' 입니다. '이 파일' 또는 '업로드된 파일'을 언급하면 이 경로를 사용하세요.]"
+        
+    response = agent.invoke({"messages": [{"role": "user", "content": query_with_context}]})
     return {"answer": response["messages"][-1].content}
 
 @app.post("/upload")

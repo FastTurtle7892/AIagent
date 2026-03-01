@@ -20,13 +20,17 @@ def ensure_session_state() -> None:
     if "last_uploaded_path" not in st.session_state:
         st.session_state.last_uploaded_path = ""
 
-
-def call_chat_api(endpoint: str, query: str) -> str:
+# 1. call_chat_api 함수 수정 (file_path 매개변수 추가)
+def call_chat_api(endpoint: str, query: str, file_path: str = None) -> str:
     url = f"{st.session_state.api_base_url}{endpoint}"
-    response = requests.post(url, json={"query": query}, timeout=REQUEST_TIMEOUT_SECONDS)
+    payload = {"query": query}
+    if file_path:
+        payload["file_path"] = file_path # 백엔드로 경로 함께 전송
+        
+    response = requests.post(url, json=payload, timeout=REQUEST_TIMEOUT_SECONDS)
     response.raise_for_status()
-    payload: dict[str, Any] = response.json()
-    return str(payload.get("answer", "No answer returned."))
+    payload_data: dict[str, Any] = response.json()
+    return str(payload_data.get("answer", "No answer returned."))
 
 
 def call_upload_api(uploaded_file) -> dict[str, Any]:
@@ -53,6 +57,7 @@ def check_backend_health() -> tuple[bool, str]:
     return True, "Backend is reachable."
 
 
+# 2. render_chat_tab 함수 수정 (call_chat_api 호출 부분)
 def render_chat_tab(title: str, endpoint: str, state_key: str, input_key: str) -> None:
     st.subheader(title)
 
@@ -71,14 +76,19 @@ def render_chat_tab(title: str, endpoint: str, state_key: str, input_key: str) -
     with st.chat_message("assistant"):
         with st.spinner("Generating response..."):
             try:
-                answer = call_chat_api(endpoint, user_input)
+                # Load Agent 탭일 경우, 방금 업로드한 파일 경로를 가져옴
+                current_file_path = None
+                if endpoint == "/chat/load":
+                    current_file_path = st.session_state.get("last_uploaded_path", "")
+                
+                # 수정된 API 호출 (경로를 함께 넘김)
+                answer = call_chat_api(endpoint, user_input, current_file_path)
             except requests.RequestException as exc:
                 answer = f"Request failed: {exc}"
             st.markdown(answer)
 
     st.session_state[state_key].append({"role": "assistant", "content": answer})
-
-
+    
 def render_upload_tab() -> None:
     st.subheader("CSV Upload")
     st.caption("Uploaded files are saved in backend data/uploads.")
