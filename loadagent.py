@@ -44,7 +44,7 @@ def load_csv_to_db(csv_file_path: str, table_name: str) -> str:
 # ---------------------------------------------------------
 # 기본 설정
 # ---------------------------------------------------------
-SERVER_IP = "172.30.1.44"
+SERVER_IP = ""
 model = ChatOllama(
     model="qwen3:8b",
     base_url=f"http://{SERVER_IP}:11434",

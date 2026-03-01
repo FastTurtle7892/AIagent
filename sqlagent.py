@@ -8,7 +8,7 @@ from langchain_ollama import ChatOllama
 
 
 # 모델 연결
-SERVER_IP = "100.112.143.6"
+SERVER_IP = ""
 model = ChatOllama(
     model="qwen3:8b", # 4060은 7B도 쾌적하게 돌립니다.
     base_url=f"http://{SERVER_IP}:11434",
