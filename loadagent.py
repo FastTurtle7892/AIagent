@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import pandas as pd
 import sqlite3
 from langchain.agents import create_agent
@@ -6,6 +8,7 @@ from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_ollama import ChatOllama
 from langchain.tools import tool
 
+load_dotenv()
 # ---------------------------------------------------------
 # 🛠️ 도구 1: CSV 컬럼명 확인 도구 (새로 추가된 '눈' 역할)
 # ---------------------------------------------------------
@@ -44,14 +47,16 @@ def load_csv_to_db(csv_file_path: str, table_name: str) -> str:
 # ---------------------------------------------------------
 # 기본 설정
 # ---------------------------------------------------------
-SERVER_IP = ""
+load_dotenv() 
+
+# os.getenv("변수명", "기본값") 형태로 사용합니다.
+SERVER_IP = os.getenv("OLLAMA_SERVER_IP_LOAD", "127.0.0.1") 
 model = ChatOllama(
     model="qwen3:8b",
     base_url=f"http://{SERVER_IP}:11434",
     temperature=0,
     keep_alive="0", 
 )
-
 db = SQLDatabase.from_uri("sqlite:///empty_chinook.db")
 
 # ---------------------------------------------------------
@@ -89,7 +94,9 @@ agent = create_agent(
 # ---------------------------------------------------------
 # Agent 실행 및 테스트
 # ---------------------------------------------------------
-question = "C:\\Users\\user\\Desktop\\AI_AGENT\\Album.csv 파일 안에 있는 데이터를 empty_chinook.db 안의 알맞은 테이블에 알아서 매칭해서 적재해줄래?"
+# 절대 경로 대신 환경 변수에서 경로를 가져옵니다.
+csv_path = os.getenv("CSV_FILE_PATH", "./Album.csv")
+question = f"{csv_path} 파일 안에 있는 데이터를 empty_chinook.db 안의 알맞은 테이블에 알아서 매칭해서 적재해줄래?"
 print(f"\n요청: {question}\n")
 
 for step in agent.stream(
