@@ -1,10 +1,15 @@
 import sqlite3
 import shutil
 import os
+from pathlib import Path
 
 def create_empty_database():
-    source_db = "Chinook.db"
-    target_db = "empty_chinook.db"
+
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
+    DATA_DIR = BASE_DIR / "data"
+    
+    source_db = DATA_DIR / "Chinook.db"
+    target_db = DATA_DIR / "empty_chinook.db"
 
     # 1. 기존 DB 파일이 있는지 확인
     if not os.path.exists(source_db):
