@@ -3,4 +3,3 @@ __pycache__
 .git
 .vscode
 .env
-empty_chinook.db
