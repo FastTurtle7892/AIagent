@@ -4,7 +4,7 @@ FastAPI 기반의 백엔드와 Streamlit 기반의 프론트엔드로 구성된 
 
 ## 📂 프로젝트 구조
 
-\`\`\`text
+```text
 AIagent/
 ├── data/                        # 데이터베이스 및 업로드 파일 관리
 │   ├── Chinook.db               # 원본 SQLite DB
@@ -26,7 +26,7 @@ AIagent/
 ├── requirements.txt             # Python 의존성 목록
 ├── Dockerfile                   # 백엔드용 Docker 이미지 빌드 파일
 └── docker-compose.yml           # Docker Compose 실행 파일
-\`\`\`
+```
 
 ## ✨ 주요 기능
 1. **SQL Chat Agent**: 자연어로 데이터베이스에 질의할 수 있는 챗봇 기능 
