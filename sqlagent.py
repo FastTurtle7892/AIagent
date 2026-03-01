@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import pathlib
 import requests
 from langchain.chat_models import init_chat_model
@@ -6,13 +8,20 @@ from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain.agents import create_agent
 from langchain_ollama import ChatOllama
 
+load_dotenv()
 
-# 모델 연결
-SERVER_IP = ""
+# ---------------------------------------------------------
+# 기본 설정
+# ---------------------------------------------------------
+load_dotenv() 
+
+# os.getenv("변수명", "기본값") 형태로 사용합니다.
+SERVER_IP = os.getenv("OLLAMA_SERVER_IP", "127.0.0.1") 
 model = ChatOllama(
-    model="qwen3:8b", # 4060은 7B도 쾌적하게 돌립니다.
+    model="qwen3:8b",
     base_url=f"http://{SERVER_IP}:11434",
     temperature=0,
+    keep_alive="0", 
 )
 
 # 데이터베이스 연결

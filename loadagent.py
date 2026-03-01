@@ -50,7 +50,7 @@ def load_csv_to_db(csv_file_path: str, table_name: str) -> str:
 load_dotenv() 
 
 # os.getenv("변수명", "기본값") 형태로 사용합니다.
-SERVER_IP = os.getenv("OLLAMA_SERVER_IP_LOAD", "127.0.0.1") 
+SERVER_IP = os.getenv("OLLAMA_SERVER_IP", "127.0.0.1") 
 model = ChatOllama(
     model="qwen3:8b",
     base_url=f"http://{SERVER_IP}:11434",
