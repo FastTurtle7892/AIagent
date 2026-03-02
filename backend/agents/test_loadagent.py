@@ -108,3 +108,5 @@ for step in agent.stream(
     stream_mode="values",
 ):
     step["messages"][-1].pretty_print()
+
+#  upload한 csv파일 안에 있는 데이터를 empty_chinook.db 안의 알맞은 테이블에 알아서 매칭해서 적재해줄래?

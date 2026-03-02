@@ -17,15 +17,16 @@ def ensure_session_state() -> None:
         st.session_state.sql_messages = []
     if "load_messages" not in st.session_state:
         st.session_state.load_messages = []
-    if "last_uploaded_path" not in st.session_state:
-        st.session_state.last_uploaded_path = ""
+    # file_path 대신 file_id를 추적
+    if "last_uploaded_file_id" not in st.session_state:
+        st.session_state.last_uploaded_file_id = ""
 
-# 1. call_chat_api 함수 수정 (file_path 매개변수 추가)
-def call_chat_api(endpoint: str, query: str, file_path: str = None) -> str:
+
+def call_chat_api(endpoint: str, query: str, file_id: str = None) -> str:
     url = f"{st.session_state.api_base_url}{endpoint}"
     payload = {"query": query}
-    if file_path:
-        payload["file_path"] = file_path # 백엔드로 경로 함께 전송
+    if file_id:
+        payload["file_id"] = file_id # 백엔드로 경로 대신 ID를 전송
         
     response = requests.post(url, json=payload, timeout=REQUEST_TIMEOUT_SECONDS)
     response.raise_for_status()
@@ -57,7 +58,6 @@ def check_backend_health() -> tuple[bool, str]:
     return True, "Backend is reachable."
 
 
-# 2. render_chat_tab 함수 수정 (call_chat_api 호출 부분)
 def render_chat_tab(title: str, endpoint: str, state_key: str, input_key: str) -> None:
     st.subheader(title)
 
@@ -76,13 +76,12 @@ def render_chat_tab(title: str, endpoint: str, state_key: str, input_key: str) -
     with st.chat_message("assistant"):
         with st.spinner("Generating response..."):
             try:
-                # Load Agent 탭일 경우, 방금 업로드한 파일 경로를 가져옴
-                current_file_path = None
+                # Load Agent 탭일 경우, 방금 업로드한 데이터 ID를 가져옴
+                current_file_id = None
                 if endpoint == "/chat/load":
-                    current_file_path = st.session_state.get("last_uploaded_path", "")
+                    current_file_id = st.session_state.get("last_uploaded_file_id", "")
                 
-                # 수정된 API 호출 (경로를 함께 넘김)
-                answer = call_chat_api(endpoint, user_input, current_file_path)
+                answer = call_chat_api(endpoint, user_input, current_file_id)
             except requests.RequestException as exc:
                 answer = f"Request failed: {exc}"
             st.markdown(answer)
@@ -91,7 +90,7 @@ def render_chat_tab(title: str, endpoint: str, state_key: str, input_key: str) -
     
 def render_upload_tab() -> None:
     st.subheader("CSV Upload")
-    st.caption("Uploaded files are saved in backend data/uploads.")
+    st.caption("Uploaded files are loaded directly into memory without saving to disk.")
 
     uploaded_file = st.file_uploader("Select CSV file", type=["csv"])
     if st.button("Upload", type="primary", use_container_width=True):
@@ -99,23 +98,23 @@ def render_upload_tab() -> None:
             st.warning("Please select a CSV file first.")
             return
 
-        with st.spinner("Uploading..."):
+        with st.spinner("Uploading & Processing Data..."):
             try:
                 result = call_upload_api(uploaded_file)
             except requests.RequestException as exc:
                 st.error(f"Upload failed: {exc}")
                 return
 
-        file_path = str(result.get("path", ""))
-        st.session_state.last_uploaded_path = file_path
-        st.success(str(result.get("info", "Upload complete")))
-        if file_path:
-            st.code(file_path)
+        file_id = str(result.get("file_id", ""))
+        st.session_state.last_uploaded_file_id = file_id
+        st.success(str(result.get("info", "Data load complete")))
+        if file_id:
+            st.code(f"Current Data ID: {file_id}")
 
-    if st.session_state.last_uploaded_path:
+    if st.session_state.last_uploaded_file_id:
         st.info(
             "You can now ask the load agent like this:\n"
-            f"- Load data from '{st.session_state.last_uploaded_path}' into the target table"
+            f"- Load data '{st.session_state.last_uploaded_file_id}' into the target table"
         )
 
 

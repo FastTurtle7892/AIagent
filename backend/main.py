@@ -1,18 +1,15 @@
 import os
+import io
+import pandas as pd
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 from fastmcp import FastMCP
 from typing import Optional
 
-# ✨ 모듈화된 에이전트 가져오기
+# ✨ 모듈화된 에이전트 및 메모리 저장소 가져오기
 from backend.agents.sqlagent import get_sql_agent
-from backend.agents.loadagent import get_load_agent, get_csv_headers, load_csv_to_db
-
-# 업로드 폴더 설정
-BASE_DIR = Path(__file__).resolve().parent.parent
-UPLOAD_DIR = BASE_DIR / "data" / "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+from backend.agents.loadagent import get_load_agent, UPLOADED_CSV_DATA
 
 app = FastAPI(title="AI Data Agent API")
 
@@ -24,7 +21,7 @@ mcp = FastMCP("DataAgentTools")
 # ---------------------------------------------------------
 class ChatRequest(BaseModel):
     query: str
-    file_path: Optional[str] = None  # 프론트엔드에서 넘겨줄 파일 경로
+    file_id: Optional[str] = None  # 프론트엔드에서 넘겨줄 메모리 데이터 ID
 
 @app.post("/chat/sql")
 async def chat_sql(request: ChatRequest):
@@ -37,22 +34,26 @@ async def chat_sql(request: ChatRequest):
 async def chat_load(request: ChatRequest):
     # Load 에이전트 생성 및 실행
     agent = get_load_agent()
-    # 에이전트가 "방금 업로드한 파일"을 이해할 수 있도록 문맥(Context) 주입
+    
+    # 에이전트가 "방금 업로드한 데이터"를 이해할 수 있도록 문맥(Context) 주입
     query_with_context = request.query
-    if request.file_path:
-        query_with_context += f"\n\n[System Note: 사용자가 최근 업로드한 CSV 파일의 경로는 '{request.file_path}' 입니다. '이 파일' 또는 '업로드된 파일'을 언급하면 이 경로를 사용하세요.]"
+    if request.file_id:
+        query_with_context += f"\n\n[System Note: 사용자가 방금 입력한 데이터의 ID는 '{request.file_id}' 입니다. 이 데이터를 분석하거나 적재할 때 이 ID를 사용하세요.]"
         
     response = agent.invoke({"messages": [{"role": "user", "content": query_with_context}]})
     return {"answer": response["messages"][-1].content}
 
 @app.post("/upload")
 async def upload_csv(file: UploadFile = File(...)):
-    # 파일 저장
-    file_location = UPLOAD_DIR / file.filename
-    with open(file_location, "wb+") as file_object:
-        file_object.write(file.file.read())
+    # ✨ 파일을 디스크에 저장하지 않고, 즉시 바이트로 읽어 메모리(Pandas DataFrame)로 올립니다.
+    contents = await file.read()
+    df = pd.read_csv(io.BytesIO(contents))
+    
+    # 식별자로 파일명을 사용
+    file_id = file.filename
+    UPLOADED_CSV_DATA[file_id] = df
         
     return {
-        "info": f"파일 '{file.filename}' 저장 완료", 
-        "path": str(file_location)
+        "info": f"데이터 '{file.filename}' 입력 및 메모리 로드 완료", 
+        "file_id": file_id
     }
